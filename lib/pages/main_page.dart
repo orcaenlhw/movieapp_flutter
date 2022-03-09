@@ -1,42 +1,75 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:movieapp_flutter/models/movie.dart';
+import 'package:movieapp_flutter/network/api.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({Key? key}) : super(key: key);
+  MainPage({Key? key}) : super(key: key);
 
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
-  var message = "";
+  List<Movie>? popularMovies;
 
-  int userID = 0;
-  int id = 0;
-  var title = "";
-
-  loadAPI() async {
-    var url = Uri.parse("https://jsonplaceholder.typicode.com/albums/1");
-    var response = await http.get(url);
-    var body = response.body;
-    var decodeResponse = jsonDecode(utf8.decode(response.bodyBytes)) as Map;
-    userID = decodeResponse["userId"];
-    id = decodeResponse["id"];
-    title = decodeResponse["title"];
-    setState(() {});
+  loadPopular() {
+    API().getPopular().then((value) {
+      setState(() {
+        popularMovies = value;
+        print(popularMovies!.length);
+      });
+    });
   }
 
   @override
-  void initState() {}
+  void initState() {
+    super.initState();
+    loadPopular();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("Movie App"),
-        ),
-        body: Column(
-          children: [Text("$userID"), Text("$id"), Text(title)],
-        ));
+      appBar: AppBar(
+        title: const Text("Movie App"),
+      ),
+      body: popularMovies == null
+          ? const Text("Loading...")
+          : Container(
+              width: MediaQuery.of(context).size.width,
+              child: Column(
+                children: [
+                  const Text("Popular"),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: 230,
+                    child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: popularMovies!.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          Movie m = popularMovies![index];
+                          return SizedBox(
+                            width: 125,
+                            height: 217,
+                            child: Card(
+                              child: Column(children: [
+                                SizedBox(
+                                  height: 180,
+                                  child: Image.network(
+                                      API.imageURL + m.posterPath),
+                                ),
+                                const SizedBox(
+                                  height: 4,
+                                ),
+                                Text(m.title)
+                              ]),
+                            ),
+                          );
+                        }),
+                  )
+                ],
+              ),
+            ),
+    );
   }
 }
